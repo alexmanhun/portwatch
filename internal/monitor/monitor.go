@@ -1,69 +1,84 @@
 package monitor
 
 import (
-	"fmt"
 	"time"
 
+	"portwatch/internal/alert"
 	"portwatch/internal/scanner"
 )
 
-// PortState holds the last known state of scanned ports.
-type PortState struct {
-	OpenPorts map[int]bool
-	LastScan  time.Time
-}
-
-// Monitor watches ports and detects changes over time.
+// Monitor watches a port range and fires callbacks on changes.
 type Monitor struct {
 	scanner  *scanner.Scanner
-	previous *PortState
-	Interval time.Duration
-	OnChange func(added, removed []int)
+	notifier *alert.Notifier
+	baseline map[int]bool
+	interval time.Duration
 }
 
-// New creates a Monitor with the given scanner and poll interval.
-func New(s *scanner.Scanner, interval time.Duration, onChange func(added, removed []int)) *Monitor {
+// New creates a Monitor for the given port range and alert notifier.
+func New(start, end int, interval time.Duration, n *alert.Notifier) (*Monitor, error) {
+	s, err := scanner.New(start, end)
+	if err != nil {
+		return nil, err
+	}
 	return &Monitor{
 		scanner:  s,
-		Interval: interval,
-		OnChange: onChange,
-	}
+		notifier: n,
+		baseline: make(map[int]bool),
+		interval: interval,
+	}, nil
 }
 
-// Scan performs a single scan and compares with previous state.
-func (m *Monitor) Scan(host string, startPort, endPort int) error {
-	ports, err := m.scanner.Scan(host, startPort, endPort)
+// Baseline captures the current open ports as the known-good state.
+func (m *Monitor) Baseline() error {
+	ports, err := m.scanner.Scan()
 	if err != nil {
-		return fmt.Errorf("scan failed: %w", err)
+		return err
 	}
-
-	current := &PortState{
-		OpenPorts: make(map[int]bool, len(ports)),
-		LastScan:  time.Now(),
-	}
+	m.baseline = make(map[int]bool, len(ports))
 	for _, p := range ports {
-		current.OpenPorts[p] = true
+		m.baseline[p] = true
 	}
-
-	if m.previous != nil && m.OnChange != nil {
-		added := diff(current.OpenPorts, m.previous.OpenPorts)
-		removed := diff(m.previous.OpenPorts, current.OpenPorts)
-		if len(added) > 0 || len(removed) > 0 {
-			m.OnChange(added, removed)
-		}
-	}
-
-	m.previous = current
 	return nil
 }
 
-// diff returns keys present in a but not in b.
-func diff(a, b map[int]bool) []int {
-	var result []int
-	for k := range a {
-		if !b[k] {
-			result = append(result, k)
+// Check scans once and emits alerts for any changes since the last baseline.
+func (m *Monitor) Check() error {
+	ports, err := m.scanner.Scan()
+	if err != nil {
+		return err
+	}
+	current := make(map[int]bool, len(ports))
+	for _, p := range ports {
+		current[p] = true
+	}
+	for p := range current {
+		if !m.baseline[p] {
+			_ = m.notifier.Notify(alert.NewPortEvent(p))
 		}
 	}
-	return result
+	for p := range m.baseline {
+		if !current[p] {
+			_ = m.notifier.Notify(alert.ClosedPortEvent(p))
+		}
+	}
+	m.baseline = current
+	return nil
+}
+
+// Run starts the monitoring loop and blocks until stop is closed.
+func (m *Monitor) Run(stop <-chan struct{}) error {
+	if err := m.Baseline(); err != nil {
+		return err
+	}
+	ticker := time.NewTicker(m.interval)
+	defer ticker.Stop()
+	for {
+		select {
+		case <-stop:
+			return nil
+		case <-ticker.C:
+			_ = m.Check()
+		}
+	}
 }
