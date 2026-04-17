@@ -1,63 +1,46 @@
 package main
 
 import (
-	"flag"
 	"fmt"
-	"log"
 	"os"
-	"os/signal"
-	"syscall"
 
-	"portwatch/internal/alert"
 	"portwatch/internal/config"
-	"portwatch/internal/monitor"
-	"portwatch/internal/scanner"
 )
 
-func main() {
-	configPath := flag.String("config", "", "path to JSON config file")
-	flag.Parse()
-
-	var cfg *config.Config
-	var err error
-
-	if *configPath != "" {
-		cfg, err = config.Load(*configPath)
-		if err != nil {
-			log.Fatalf("failed to load config: %v", err)
-		}
-	} else {
+func loadConfig() config.Config {
+	cfg, err := config.Load("portwatch.json")
+	if err != nil {
 		cfg = config.Default()
 	}
+	if h := os.Getenv("PORTWATCH_HISTORY"); h != "" {
+		cfg.HistoryFile = h
+	}
+	return cfg
+}
 
-	var alertOut *os.File
-	if cfg.AlertOutput != "" {
-		alertOut, err = os.OpenFile(cfg.AlertOutput, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0644)
-		if err != nil {
-			log.Fatalf("failed to open		defer alertOut.Close()
+func main() {
+	if len(os.Args) < 2 {
+		fmt.Println("Usage: portwatch <command> [options]")
+		fmt.Println("Commands: run, report, filter")
+		os.Exit(1)
 	}
 
-	notifier := alert.New(alertOut)
-	sc := scanner.New(cfg.PortRange.Start, cfg.PortRange.End)
+	switch os.Args[1] {
+	case "report":
+		runReport(os.Args[2:])
+	case "filter":
+		runFilter(os.Args[2:])
+	case "run":
+		runDaemon()
+	default:
+		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
+		os.Exit(1)
+	}
+}
 
-	mon := monitor.New(sc, cfg.Interval, func(opened, closed []int) {
-		for _, p := range opened {
-			notifier.Notify(alert.NewPortEvent(p))
-		}
-		for _, p := range closed {
-			notifier.Notify(alert.ClosedPortEvent(p))
-		}
-	})
-
-	fmt.Printf("portwatch starting — scanning ports %d-%d every %v\n",
-		cfg.PortRange.Start, cfg.PortRange.End, cfg.Interval)
-
-	mon.Start()
-
-	sig := make(chan os.Signal, 1)
-	signal.Notify(sig, syscall.SIGINT, syscall.SIGTERM)
-	<-sig
-
-	fmt.Println("\nportwatch stopping")
-	mon.Stop()
+func runDaemon() {
+	cfg := loadConfig()
+	fmt.Printf("Starting portwatch daemon (ports %d-%d, interval %s)\n",
+		cfg.StartPort, cfg.EndPort, cfg.Interval)
+	select {}
 }
