@@ -1,38 +1,37 @@
 package main
 
 import (
-	"os"
+	"log"
 
+	"portwatch/internal/config"
 	"portwatch/internal/notify"
 )
 
-// buildDispatcher constructs a Dispatcher from environment-configured backends.
-// Supported backends are enabled by setting the corresponding environment variables.
-func buildDispatcher() *notify.Dispatcher {
-	d := notify.New()
+// buildDispatcher constructs a Dispatcher wired with all configured backends.
+func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
+	d := notify.New(log.Default())
 
-	if webhookURL := os.Getenv("PORTWATCH_WEBHOOK_URL"); webhookURL != "" {
-		d.Register(notify.NewWebhookBackend(webhookURL))
+	d.Add(notify.NewLogBackend(log.Default()))
+
+	if cfg.WebhookURL != "" {
+		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
 
-	if slackURL := os.Getenv("PORTWATCH_SLACK_URL"); slackURL != "" {
-		d.Register(notify.NewSlackBackend(slackURL))
+	if cfg.PagerDutyKey != "" {
+		d.Add(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
 
-	if pdKey := os.Getenv("PORTWATCH_PAGERDUTY_KEY"); pdKey != "" {
-		d.Register(notify.NewPagerDutyBackend(pdKey))
+	if cfg.SlackWebhookURL != "" {
+		d.Add(notify.NewSlackBackend(cfg.SlackWebhookURL))
 	}
 
-	if smtpHost := os.Getenv("PORTWATCH_SMTP_HOST"); smtpHost != "" {
-		to := os.Getenv("PORTWATCH_ALERT_EMAIL")
-		from := os.Getenv("PORTWATCH_FROM_EMAIL")
-		if to != "" && from != "" {
-			d.Register(notify.NewEmailBackend(smtpHost, from, to))
-		}
+	if cfg.EmailHost != "" && cfg.EmailFrom != "" && cfg.EmailTo != "" {
+		d.Add(notify.NewEmailBackend(cfg.EmailHost, cfg.EmailFrom, cfg.EmailTo))
 	}
 
-	// Always attach log backend as fallback.
-	d.Register(notify.NewLogBackend(os.Stderr))
+	if cfg.SMSGatewayURL != "" && cfg.SMSFrom != "" && cfg.SMSTo != "" {
+		d.Add(notify.NewSMSBackend(cfg.SMSGatewayURL, cfg.SMSAPIKey, cfg.SMSFrom, cfg.SMSTo))
+	}
 
 	return d
 }
