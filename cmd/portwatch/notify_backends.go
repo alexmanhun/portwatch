@@ -1,13 +1,15 @@
 package main
 
 import (
-	"github.com/user/portwatch/internal/config"
 	"github.com/user/portwatch/internal/notify"
+	"github.com/user/portwatch/internal/config"
 )
 
 // buildDispatcher constructs a Dispatcher wired with all configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
+
+	// Log backend is always present
 	d.Register(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
@@ -40,5 +42,9 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	if cfg.PushoverToken != "" && cfg.PushoverUser != "" {
 		d.Register(notify.NewPushoverBackend(cfg.PushoverToken, cfg.PushoverUser))
 	}
+	if cfg.MatrixHomeserver != "" && cfg.MatrixToken != "" && cfg.MatrixRoomID != "" {
+		d.Register(notify.NewMatrixBackend(cfg.MatrixHomeserver, cfg.MatrixToken, cfg.MatrixRoomID))
+	}
+
 	return d
 }
