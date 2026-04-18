@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/user/portwatch/internal/notify"
 	"github.com/user/portwatch/internal/config"
+	"github.com/user/portwatch/internal/notify"
 )
 
 // buildDispatcher constructs a Dispatcher wired with all configured backends.
@@ -19,14 +19,14 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	if cfg.OpsGenieKey != "" {
 		d.Register(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
 	}
-	if cfg.SlackURL != "" {
-		d.Register(notify.NewSlackBackend(cfg.SlackURL))
+	if cfg.SlackWebhook != "" {
+		d.Register(notify.NewSlackBackend(cfg.SlackWebhook))
 	}
-	if cfg.DiscordURL != "" {
-		d.Register(notify.NewDiscordBackend(cfg.DiscordURL))
+	if cfg.DiscordWebhook != "" {
+		d.Register(notify.NewDiscordBackend(cfg.DiscordWebhook))
 	}
-	if cfg.TeamsURL != "" {
-		d.Register(notify.NewTeamsBackend(cfg.TeamsURL))
+	if cfg.TeamsWebhook != "" {
+		d.Register(notify.NewTeamsBackend(cfg.TeamsWebhook))
 	}
 	if cfg.VictorOpsURL != "" {
 		d.Register(notify.NewVictorOpsBackend(cfg.VictorOpsURL))
@@ -36,6 +36,9 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	}
 	if cfg.NtfyURL != "" {
 		d.Register(notify.NewNtfyBackend(cfg.NtfyURL))
+	}
+	if cfg.PushoverToken != "" && cfg.PushoverUser != "" {
+		d.Register(notify.NewPushoverBackend(cfg.PushoverToken, cfg.PushoverUser))
 	}
 	return d
 }
