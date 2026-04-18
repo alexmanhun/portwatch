@@ -2,43 +2,41 @@ package main
 
 import (
 	"github.com/user/portwatch/internal/notify"
-	"github.com/user/portwatch/internal/config"
 )
 
-func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
+func buildDispatcher(cfg interface{ GetNotify() map[string]string }) *notify.Dispatcher {
+	settings := cfg.GetNotify()
 	d := notify.New()
+
 	d.Add(notify.NewLogBackend())
 
-	if cfg.WebhookURL != "" {
-		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
+	if url, ok := settings["webhook_url"]; ok && url != "" {
+		d.Add(notify.NewWebhookBackend(url))
 	}
-
-	if cfg.PagerDutyKey != "" {
-		d.Add(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
+	if url, ok := settings["slack_url"]; ok && url != "" {
+		d.Add(notify.NewSlackBackend(url))
 	}
-
-	if cfg.SlackWebhookURL != "" {
-		d.Add(notify.NewSlackBackend(cfg.SlackWebhookURL))
+	if url, ok := settings["discord_url"]; ok && url != "" {
+		d.Add(notify.NewDiscordBackend(url))
 	}
-
-	if cfg.DiscordWebhookURL != "" {
-		d.Add(notify.NewDiscordBackend(cfg.DiscordWebhookURL))
+	if url, ok := settings["teams_url"]; ok && url != "" {
+		d.Add(notify.NewTeamsBackend(url))
 	}
-
-	if cfg.TeamsWebhookURL != "" {
-		d.Add(notify.NewTeamsBackend(cfg.TeamsWebhookURL))
+	if key, ok := settings["pagerduty_key"]; ok && key != "" {
+		d.Add(notify.NewPagerDutyBackend(key))
 	}
-
-	if cfg.SMSWebhookURL != "" {
-		d.Add(notify.NewSMSBackend(cfg.SMSWebhookURL))
+	if key, ok := settings["opsgenie_key"]; ok && key != "" {
+		d.Add(notify.NewOpsGenieBackend(key))
 	}
-
-	if cfg.OpsGenieAPIKey != "" {
-		d.Add(notify.NewOpsGenieBackend(cfg.OpsGenieAPIKey))
+	if url, ok := settings["victorops_url"]; ok && url != "" {
+		d.Add(notify.NewVictorOpsBackend(url))
 	}
-
-	if cfg.EmailHost != "" && cfg.EmailFrom != "" && cfg.EmailTo != "" {
-		d.Add(notify.NewEmailBackend(cfg.EmailHost, cfg.EmailFrom, cfg.EmailTo))
+	if url, ok := settings["sms_url"]; ok && url != "" {
+		d.Add(notify.NewSMSBackend(url))
+	}
+	if addr, ok := settings["email_addr"]; ok && addr != "" {
+		smtp := settings["smtp_host"]
+		d.Add(notify.NewEmailBackend(smtp, addr))
 	}
 
 	return d
