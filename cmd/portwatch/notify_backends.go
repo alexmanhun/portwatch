@@ -5,8 +5,6 @@ import (
 	"github.com/user/portwatch/internal/config"
 )
 
-// buildDispatcher constructs a Dispatcher from the given config,
-// always including the log backend and optionally adding configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
 	d.Add(notify.NewLogBackend())
@@ -27,12 +25,16 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 		d.Add(notify.NewDiscordBackend(cfg.DiscordWebhookURL))
 	}
 
+	if cfg.TeamsWebhookURL != "" {
+		d.Add(notify.NewTeamsBackend(cfg.TeamsWebhookURL))
+	}
+
 	if cfg.SMSWebhookURL != "" {
 		d.Add(notify.NewSMSBackend(cfg.SMSWebhookURL))
 	}
 
-	if cfg.TeamsWebhookURL != "" {
-		d.Add(notify.NewTeamsBackend(cfg.TeamsWebhookURL))
+	if cfg.OpsGenieAPIKey != "" {
+		d.Add(notify.NewOpsGenieBackend(cfg.OpsGenieAPIKey))
 	}
 
 	if cfg.EmailHost != "" && cfg.EmailFrom != "" && cfg.EmailTo != "" {

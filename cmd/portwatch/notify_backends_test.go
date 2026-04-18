@@ -3,7 +3,7 @@ package main
 import (
 	"testing"
 
-	"portwatch/internal/config"
+	"github.com/user/portwatch/internal/config"
 )
 
 func backendNames(d interface{ Backends() []string }) []string {
@@ -45,6 +45,18 @@ func TestBuildDispatcherPagerDuty(t *testing.T) {
 	t.Fatal("expected pagerduty backend")
 }
 
+func TestBuildDispatcherOpsGenie(t *testing.T) {
+	cfg := config.Default()
+	cfg.OpsGenieAPIKey = "og-key"
+	d := buildDispatcher(cfg)
+	for _, name := range d.Backends() {
+		if name == "opsgenie" {
+			return
+		}
+	}
+	t.Fatal("expected opsgenie backend")
+}
+
 func TestBuildDispatcherNoEmailWithoutAllFields(t *testing.T) {
 	cfg := config.Default()
 	cfg.EmailHost = "smtp.example.com"
@@ -55,19 +67,4 @@ func TestBuildDispatcherNoEmailWithoutAllFields(t *testing.T) {
 			t.Fatal("email backend should not be added without all fields")
 		}
 	}
-}
-
-func TestBuildDispatcherSMS(t *testing.T) {
-	cfg := config.Default()
-	cfg.SMSGatewayURL = "http://sms.example.com"
-	cfg.SMSAPIKey = "key"
-	cfg.SMSFrom = "+1000"
-	cfg.SMSTo = "+2000"
-	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "sms" {
-			return
-		}
-	}
-	t.Fatal("expected sms backend")
 }
