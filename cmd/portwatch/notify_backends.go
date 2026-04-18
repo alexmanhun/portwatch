@@ -2,42 +2,40 @@ package main
 
 import (
 	"github.com/user/portwatch/internal/notify"
+	"github.com/user/portwatch/internal/config"
 )
 
-func buildDispatcher(cfg interface{ GetNotify() map[string]string }) *notify.Dispatcher {
-	settings := cfg.GetNotify()
+// buildDispatcher constructs a Dispatcher wired with all configured backends.
+func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
+	d.Register(notify.NewLogBackend())
 
-	d.Add(notify.NewLogBackend())
-
-	if url, ok := settings["webhook_url"]; ok && url != "" {
-		d.Add(notify.NewWebhookBackend(url))
+	if cfg.WebhookURL != "" {
+		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
-	if url, ok := settings["slack_url"]; ok && url != "" {
-		d.Add(notify.NewSlackBackend(url))
+	if cfg.PagerDutyKey != "" {
+		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
-	if url, ok := settings["discord_url"]; ok && url != "" {
-		d.Add(notify.NewDiscordBackend(url))
+	if cfg.OpsGenieKey != "" {
+		d.Register(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
 	}
-	if url, ok := settings["teams_url"]; ok && url != "" {
-		d.Add(notify.NewTeamsBackend(url))
+	if cfg.SlackURL != "" {
+		d.Register(notify.NewSlackBackend(cfg.SlackURL))
 	}
-	if key, ok := settings["pagerduty_key"]; ok && key != "" {
-		d.Add(notify.NewPagerDutyBackend(key))
+	if cfg.DiscordURL != "" {
+		d.Register(notify.NewDiscordBackend(cfg.DiscordURL))
 	}
-	if key, ok := settings["opsgenie_key"]; ok && key != "" {
-		d.Add(notify.NewOpsGenieBackend(key))
+	if cfg.TeamsURL != "" {
+		d.Register(notify.NewTeamsBackend(cfg.TeamsURL))
 	}
-	if url, ok := settings["victorops_url"]; ok && url != "" {
-		d.Add(notify.NewVictorOpsBackend(url))
+	if cfg.VictorOpsURL != "" {
+		d.Register(notify.NewVictorOpsBackend(cfg.VictorOpsURL))
 	}
-	if url, ok := settings["sms_url"]; ok && url != "" {
-		d.Add(notify.NewSMSBackend(url))
+	if cfg.GotifyURL != "" && cfg.GotifyToken != "" {
+		d.Register(notify.NewGotifyBackend(cfg.GotifyURL, cfg.GotifyToken))
 	}
-	if addr, ok := settings["email_addr"]; ok && addr != "" {
-		smtp := settings["smtp_host"]
-		d.Add(notify.NewEmailBackend(smtp, addr))
+	if cfg.NtfyURL != "" {
+		d.Register(notify.NewNtfyBackend(cfg.NtfyURL))
 	}
-
 	return d
 }
