@@ -5,11 +5,10 @@ import (
 	"github.com/user/portwatch/internal/config"
 )
 
-// buildDispatcher constructs a Dispatcher wired with all configured backends.
+// buildDispatcher constructs a Dispatcher from the given config,
+// always including the log backend and optionally adding configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-
-	// Log backend is always active.
 	d.Add(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
@@ -30,6 +29,10 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 
 	if cfg.SMSWebhookURL != "" {
 		d.Add(notify.NewSMSBackend(cfg.SMSWebhookURL))
+	}
+
+	if cfg.TeamsWebhookURL != "" {
+		d.Add(notify.NewTeamsBackend(cfg.TeamsWebhookURL))
 	}
 
 	if cfg.EmailHost != "" && cfg.EmailFrom != "" && cfg.EmailTo != "" {
