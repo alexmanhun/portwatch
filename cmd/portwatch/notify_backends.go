@@ -9,26 +9,26 @@ import (
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
 
-	// Log backend is always present
+	// Log backend is always active
 	d.Register(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
 		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
+	}
+	if cfg.SlackWebhookURL != "" {
+		d.Register(notify.NewSlackBackend(cfg.SlackWebhookURL))
+	}
+	if cfg.DiscordWebhookURL != "" {
+		d.Register(notify.NewDiscordBackend(cfg.DiscordWebhookURL))
+	}
+	if cfg.TeamsWebhookURL != "" {
+		d.Register(notify.NewTeamsBackend(cfg.TeamsWebhookURL))
 	}
 	if cfg.PagerDutyKey != "" {
 		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
 	if cfg.OpsGenieKey != "" {
 		d.Register(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
-	}
-	if cfg.SlackWebhook != "" {
-		d.Register(notify.NewSlackBackend(cfg.SlackWebhook))
-	}
-	if cfg.DiscordWebhook != "" {
-		d.Register(notify.NewDiscordBackend(cfg.DiscordWebhook))
-	}
-	if cfg.TeamsWebhook != "" {
-		d.Register(notify.NewTeamsBackend(cfg.TeamsWebhook))
 	}
 	if cfg.VictorOpsURL != "" {
 		d.Register(notify.NewVictorOpsBackend(cfg.VictorOpsURL))
@@ -42,8 +42,11 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	if cfg.PushoverToken != "" && cfg.PushoverUser != "" {
 		d.Register(notify.NewPushoverBackend(cfg.PushoverToken, cfg.PushoverUser))
 	}
-	if cfg.MatrixHomeserver != "" && cfg.MatrixToken != "" && cfg.MatrixRoomID != "" {
-		d.Register(notify.NewMatrixBackend(cfg.MatrixHomeserver, cfg.MatrixToken, cfg.MatrixRoomID))
+	if cfg.MatrixURL != "" && cfg.MatrixToken != "" {
+		d.Register(notify.NewMatrixBackend(cfg.MatrixURL, cfg.MatrixToken))
+	}
+	if cfg.TelegramBotToken != "" && cfg.TelegramChatID != "" {
+		d.Register(notify.NewTelegramBackend(cfg.TelegramBotToken, cfg.TelegramChatID))
 	}
 
 	return d
