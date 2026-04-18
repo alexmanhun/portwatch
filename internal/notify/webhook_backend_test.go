@@ -50,3 +50,11 @@ func TestWebhookBackendName(t *testing.T) {
 		t.Errorf("unexpected name: %s", wb.Name())
 	}
 }
+
+func TestWebhookBackendInvalidURL(t *testing.T) {
+	wb := NewWebhookBackend("://invalid-url")
+	err := wb.Send(Message{Level: LevelInfo, Title: "test", Port: 8080})
+	if err == nil {
+		t.Error("expected error for invalid URL")
+	}
+}
