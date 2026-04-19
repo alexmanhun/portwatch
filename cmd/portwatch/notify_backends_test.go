@@ -1,70 +1,63 @@
 package main
 
 import (
+	"portwatch/internal/config"
 	"testing"
-
-	"github.com/user/portwatch/internal/config"
 )
 
-func backendNames(d interface{ Backends() []string }) []string {
-	return d.Backends()
+func backendNames(d interface{ Names() []string }) []string {
+	return d.Names()
+}
+
+func hasBackend(names []string, target string) bool {
+	for _, n := range names {
+		if n == target {
+			return true
+		}
+	}
+	return false
 }
 
 func TestBuildDispatcherAlwaysHasLogBackend(t *testing.T) {
 	cfg := config.Default()
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "log" {
-			return
-		}
+	if !hasBackend(d.Names(), "log") {
+		t.Error("expected log backend to always be present")
 	}
-	t.Fatal("expected log backend to always be present")
 }
 
 func TestBuildDispatcherWebhook(t *testing.T) {
 	cfg := config.Default()
 	cfg.WebhookURL = "http://example.com/hook"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "webhook" {
-			return
-		}
+	if !hasBackend(d.Names(), "webhook") {
+		t.Error("expected webhook backend")
 	}
-	t.Fatal("expected webhook backend")
 }
 
 func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
-	cfg.PagerDutyKey = "test-key"
+	cfg.PagerDutyKey = "somekey"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "pagerduty" {
-			return
-		}
+	if !hasBackend(d.Names(), "pagerduty") {
+		t.Error("expected pagerduty backend")
 	}
-	t.Fatal("expected pagerduty backend")
 }
 
 func TestBuildDispatcherOpsGenie(t *testing.T) {
 	cfg := config.Default()
-	cfg.OpsGenieKey = "og-key"
+	cfg.OpsGenieKey = "ogkey"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "opsgenie" {
-			return
-		}
+	if !hasBackend(d.Names(), "opsgenie") {
+		t.Error("expected opsgenie backend")
 	}
-	t.Fatal("expected opsgenie backend")
 }
 
-func TestBuildDispatcherGoogleChat(t *testing.T) {
+func TestBuildDispatcherDingTalk(t *testing.T) {
 	cfg := config.Default()
-	cfg.GoogleChatURL = "http://chat.googleapis.com/webhook"
+	cfg.DingTalkWebhook = "http://oapi.dingtalk.com/robot/send?access_token=abc"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "googlechat" {
-			return
-		}
+	if !hasBackend(d.Names(), "dingtalk") {
+		t.Error("expected dingtalk backend")
 	}
-	t.Fatal("expected googlechat backend")
 }
