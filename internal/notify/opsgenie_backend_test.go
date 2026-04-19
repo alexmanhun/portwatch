@@ -20,6 +20,9 @@ func TestOpsGenieBackendSendsJSON(t *testing.T) {
 		if r.Header.Get("Authorization") == "" {
 			t.Error("missing Authorization header")
 		}
+		if r.Header.Get("Content-Type") != "application/json" {
+			t.Errorf("expected Content-Type application/json, got %s", r.Header.Get("Content-Type"))
+		}
 		json.NewDecoder(r.Body).Decode(&received)
 		w.WriteHeader(http.StatusAccepted)
 	}))
