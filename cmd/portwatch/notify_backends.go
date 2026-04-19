@@ -8,49 +8,38 @@ import (
 // buildDispatcher constructs a Dispatcher wired with all configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-	d.Register(notify.NewLogBackend())
+	d.Add(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
-		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
-	}
-	if cfg.SlackWebhookURL != "" {
-		d.Register(notify.NewSlackBackend(cfg.SlackWebhookURL))
+		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
 	if cfg.PagerDutyKey != "" {
-		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
+		d.Add(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
 	if cfg.OpsGenieKey != "" {
-		d.Register(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
+		d.Add(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
 	}
-	if cfg.RocketChatURL != "" {
-		d.Register(notify.NewRocketChatBackend(cfg.RocketChatURL))
+	if cfg.SlackURL != "" {
+		d.Add(notify.NewSlackBackend(cfg.SlackURL))
 	}
-	if cfg.EmailAddr != "" {
-		d.Register(notify.NewEmailBackend(cfg.SMTPHost, cfg.SMTPPort, cfg.EmailAddr))
+	if cfg.DiscordURL != "" {
+		d.Add(notify.NewDiscordBackend(cfg.DiscordURL))
 	}
-	if cfg.DiscordWebhookURL != "" {
-		d.Register(notify.NewDiscordBackend(cfg.DiscordWebhookURL))
+	if cfg.TeamsURL != "" {
+		d.Add(notify.NewTeamsBackend(cfg.TeamsURL))
 	}
-	if cfg.TeamsWebhookURL != "" {
-		d.Register(notify.NewTeamsBackend(cfg.TeamsWebhookURL))
+	if cfg.VictorOpsURL != "" {
+		d.Add(notify.NewVictorOpsBackend(cfg.VictorOpsURL))
 	}
 	if cfg.GotifyURL != "" && cfg.GotifyToken != "" {
-		d.Register(notify.NewGotifyBackend(cfg.GotifyURL, cfg.GotifyToken))
+		d.Add(notify.NewGotifyBackend(cfg.GotifyURL, cfg.GotifyToken))
 	}
 	if cfg.NtfyURL != "" {
-		d.Register(notify.NewNtfyBackend(cfg.NtfyURL))
+		d.Add(notify.NewNtfyBackend(cfg.NtfyURL))
 	}
-	if cfg.PushoverToken != "" && cfg.PushoverUser != "" {
-		d.Register(notify.NewPushoverBackend(cfg.PushoverToken, cfg.PushoverUser))
+	if cfg.XMPPGatewayURL != "" && cfg.XMPPTo != "" {
+		d.Add(notify.NewXMPPBackend(cfg.XMPPGatewayURL, cfg.XMPPTo))
 	}
-	if cfg.MatrixURL != "" && cfg.MatrixToken != "" {
-		d.Register(notify.NewMatrixBackend(cfg.MatrixURL, cfg.MatrixToken))
-	}
-	if cfg.TelegramToken != "" && cfg.TelegramChatID != "" {
-		d.Register(notify.NewTelegramBackend(cfg.TelegramToken, cfg.TelegramChatID))
-	}
-	if cfg.MattermostURL != "" {
-		d.Register(notify.NewMattermostBackend(cfg.MattermostURL))
-	}
+
 	return d
 }

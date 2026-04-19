@@ -35,7 +35,7 @@ func TestBuildDispatcherWebhook(t *testing.T) {
 
 func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
-	cfg.PagerDutyKey = "somekey"
+	cfg.PagerDutyKey = "testkey"
 	d := buildDispatcher(cfg)
 	for _, name := range d.Backends() {
 		if name == "pagerduty" {
@@ -47,7 +47,7 @@ func TestBuildDispatcherPagerDuty(t *testing.T) {
 
 func TestBuildDispatcherOpsGenie(t *testing.T) {
 	cfg := config.Default()
-	cfg.OpsGenieAPIKey = "og-key"
+	cfg.OpsGenieKey = "ogkey"
 	d := buildDispatcher(cfg)
 	for _, name := range d.Backends() {
 		if name == "opsgenie" {
@@ -57,14 +57,15 @@ func TestBuildDispatcherOpsGenie(t *testing.T) {
 	t.Fatal("expected opsgenie backend")
 }
 
-func TestBuildDispatcherNoEmailWithoutAllFields(t *testing.T) {
+func TestBuildDispatcherXMPP(t *testing.T) {
 	cfg := config.Default()
-	cfg.EmailHost = "smtp.example.com"
-	// missing From and To
+	cfg.XMPPGatewayURL = "http://xmpp-gw.local"
+	cfg.XMPPTo = "ops@example.com"
 	d := buildDispatcher(cfg)
 	for _, name := range d.Backends() {
-		if name == "email" {
-			t.Fatal("email backend should not be added without all fields")
+		if name == "xmpp" {
+			return
 		}
 	}
+	t.Fatal("expected xmpp backend")
 }
