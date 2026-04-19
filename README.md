@@ -59,6 +59,15 @@ portwatch start --baseline baseline.json
 
 `portwatch` can be configured via a `portwatch.yaml` file in the working directory or via CLI flags. Run `portwatch --help` for a full list of options.
 
+### Configuration File Example
+
+```yaml
+interval: 30s
+notify: true
+baseline: baseline.json
+log_level: info
+```
+
 ---
 
 ## License
