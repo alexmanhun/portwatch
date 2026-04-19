@@ -20,8 +20,7 @@ func loadConfig() config.Config {
 
 func main() {
 	if len(os.Args) < 2 {
-		fmt.Println("Usage: portwatch <command> [options]")
-		fmt.Println("Commands: run, report, filter")
+		printUsage()
 		os.Exit(1)
 	}
 
@@ -32,10 +31,21 @@ func main() {
 		runFilter(os.Args[2:])
 	case "run":
 		runDaemon()
+	case "help", "--help", "-h":
+		printUsage()
 	default:
 		fmt.Fprintf(os.Stderr, "unknown command: %s\n", os.Args[1])
 		os.Exit(1)
 	}
+}
+
+func printUsage() {
+	fmt.Println("Usage: portwatch <command> [options]")
+	fmt.Println("Commands:")
+	fmt.Println("  run     Start the portwatch daemon")
+	fmt.Println("  report  Display port history report")
+	fmt.Println("  filter  Filter port history by criteria")
+	fmt.Println("  help    Show this help message")
 }
 
 func runDaemon() {
