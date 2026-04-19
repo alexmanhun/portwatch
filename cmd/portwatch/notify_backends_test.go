@@ -1,9 +1,8 @@
 package main
 
 import (
+	"portwatch/internal/config"
 	"testing"
-
-	"github.com/user/portwatch/internal/config"
 )
 
 func backendNames(d interface{ Backends() []string }) []string {
@@ -13,8 +12,8 @@ func backendNames(d interface{ Backends() []string }) []string {
 func TestBuildDispatcherAlwaysHasLogBackend(t *testing.T) {
 	cfg := config.Default()
 	d := buildDispatcher(cfg)
-	for _, n := range d.Backends() {
-		if n == "log" {
+	for _, name := range d.Backends() {
+		if name == "log" {
 			return
 		}
 	}
@@ -25,8 +24,8 @@ func TestBuildDispatcherWebhook(t *testing.T) {
 	cfg := config.Default()
 	cfg.WebhookURL = "http://example.com/hook"
 	d := buildDispatcher(cfg)
-	for _, n := range d.Backends() {
-		if n == "webhook" {
+	for _, name := range d.Backends() {
+		if name == "webhook" {
 			return
 		}
 	}
@@ -35,10 +34,10 @@ func TestBuildDispatcherWebhook(t *testing.T) {
 
 func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
-	cfg.PagerDutyKey = "testkey"
+	cfg.PagerDutyKey = "key123"
 	d := buildDispatcher(cfg)
-	for _, n := range d.Backends() {
-		if n == "pagerduty" {
+	for _, name := range d.Backends() {
+		if name == "pagerduty" {
 			return
 		}
 	}
@@ -49,23 +48,22 @@ func TestBuildDispatcherOpsGenie(t *testing.T) {
 	cfg := config.Default()
 	cfg.OpsGenieKey = "ogkey"
 	d := buildDispatcher(cfg)
-	for _, n := range d.Backends() {
-		if n == "opsgenie" {
+	for _, name := range d.Backends() {
+		if name == "opsgenie" {
 			return
 		}
 	}
 	t.Fatal("opsgenie backend missing")
 }
 
-func TestBuildDispatcherKafka(t *testing.T) {
+func TestBuildDispatcherMQTT(t *testing.T) {
 	cfg := config.Default()
-	cfg.KafkaProxyURL = "http://localhost:8082"
-	cfg.KafkaTopic = "portwatch"
+	cfg.MQTTBrokerURL = "http://localhost:8080/publish"
 	d := buildDispatcher(cfg)
-	for _, n := range d.Backends() {
-		if n == "kafka" {
+	for _, name := range d.Backends() {
+		if name == "mqtt" {
 			return
 		}
 	}
-	t.Fatal("kafka backend missing")
+	t.Fatal("mqtt backend missing")
 }
