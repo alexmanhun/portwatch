@@ -13,59 +13,59 @@ func backendNames(d interface{ Backends() []string }) []string {
 func TestBuildDispatcherAlwaysHasLogBackend(t *testing.T) {
 	cfg := config.Default()
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "log" {
+	for _, n := range d.Backends() {
+		if n == "log" {
 			return
 		}
 	}
-	t.Fatal("expected log backend to always be present")
+	t.Fatal("log backend missing")
 }
 
 func TestBuildDispatcherWebhook(t *testing.T) {
 	cfg := config.Default()
 	cfg.WebhookURL = "http://example.com/hook"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "webhook" {
+	for _, n := range d.Backends() {
+		if n == "webhook" {
 			return
 		}
 	}
-	t.Fatal("expected webhook backend")
+	t.Fatal("webhook backend missing")
 }
 
 func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
 	cfg.PagerDutyKey = "testkey"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "pagerduty" {
+	for _, n := range d.Backends() {
+		if n == "pagerduty" {
 			return
 		}
 	}
-	t.Fatal("expected pagerduty backend")
+	t.Fatal("pagerduty backend missing")
 }
 
 func TestBuildDispatcherOpsGenie(t *testing.T) {
 	cfg := config.Default()
 	cfg.OpsGenieKey = "ogkey"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "opsgenie" {
+	for _, n := range d.Backends() {
+		if n == "opsgenie" {
 			return
 		}
 	}
-	t.Fatal("expected opsgenie backend")
+	t.Fatal("opsgenie backend missing")
 }
 
-func TestBuildDispatcherXMPP(t *testing.T) {
+func TestBuildDispatcherKafka(t *testing.T) {
 	cfg := config.Default()
-	cfg.XMPPGatewayURL = "http://xmpp-gw.local"
-	cfg.XMPPTo = "ops@example.com"
+	cfg.KafkaProxyURL = "http://localhost:8082"
+	cfg.KafkaTopic = "portwatch"
 	d := buildDispatcher(cfg)
-	for _, name := range d.Backends() {
-		if name == "xmpp" {
+	for _, n := range d.Backends() {
+		if n == "kafka" {
 			return
 		}
 	}
-	t.Fatal("expected xmpp backend")
+	t.Fatal("kafka backend missing")
 }

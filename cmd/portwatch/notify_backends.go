@@ -1,15 +1,13 @@
 package main
 
 import (
-	"portwatch/internal/config"
-	"portwatch/internal/notify"
+	"github.com/user/portwatch/internal/notify"
+	"github.com/user/portwatch/internal/config"
 )
 
 // buildDispatcher constructs a Dispatcher wired with all configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-
-	// Always include the log backend
 	d.Add(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
@@ -24,8 +22,8 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	if cfg.SlackWebhook != "" {
 		d.Add(notify.NewSlackBackend(cfg.SlackWebhook))
 	}
-	if cfg.SignalREndpoint != "" && cfg.SignalRHub != "" {
-		d.Add(notify.NewSignalRBackend(cfg.SignalREndpoint, cfg.SignalRHub, cfg.SignalRKey))
+	if cfg.KafkaProxyURL != "" && cfg.KafkaTopic != "" {
+		d.Add(notify.NewKafkaBackend(cfg.KafkaProxyURL, cfg.KafkaTopic))
 	}
 
 	return d
