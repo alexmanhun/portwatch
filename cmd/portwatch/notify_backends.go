@@ -1,26 +1,28 @@
 package main
 
 import (
-	"github.com/user/portwatch/internal/config"
-	"github.com/user/portwatch/internal/notify"
+	"portwatch/internal/config"
+	"portwatch/internal/notify"
 )
 
-// buildDispatcher constructs a Dispatcher wired with all configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-	d.Register(notify.NewLogBackend())
+	d.Add(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
-		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
+		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
 	if cfg.PagerDutyKey != "" {
-		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
+		d.Add(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
-	if cfg.SlackWebhook != "" {
-		d.Register(notify.NewSlackBackend(cfg.SlackWebhook))
+	if cfg.SlackWebhookURL != "" {
+		d.Add(notify.NewSlackBackend(cfg.SlackWebhookURL))
 	}
-	if cfg.SplunkURL != "" && cfg.SplunkToken != "" {
-		d.Register(notify.NewSplunkBackend(cfg.SplunkURL, cfg.SplunkToken))
+	if cfg.DatadogAPIKey != "" {
+		d.Add(notify.NewDatadogBackend(cfg.DatadogAPIKey))
+	}
+	if cfg.NewRelicAccountID != "" && cfg.NewRelicInsertKey != "" {
+		d.Add(notify.NewNewRelicBackend(cfg.NewRelicAccountID, cfg.NewRelicInsertKey))
 	}
 
 	return d
