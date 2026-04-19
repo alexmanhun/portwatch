@@ -5,41 +5,28 @@ import (
 	"os"
 )
 
-// Config holds all portwatch runtime configuration.
+// Config holds all portwatch configuration.
 type Config struct {
-	ScanRange    string `json:"scan_range"`
-	IntervalSecs int    `json:"interval_secs"`
-	AlertOutput  string `json:"alert_output"`
-	HistoryFile  string `json:"history_file"`
-
-	// Webhook
-	WebhookURL string `json:"webhook_url"`
-
-	// PagerDuty
-	PagerDutyKey string `json:"pagerduty_key"`
-
-	// Slack
-	SlackWebhookURL string `json:"slack_webhook_url"`
-
-	// Email
-	EmailHost string `json:"email_host"`
-	EmailFrom string `json:"email_from"`
-	EmailTo   string `json:"email_to"`
-
-	// SMS
-	SMSGatewayURL string `json:"sms_gateway_url"`
-	SMSAPIKey     string `json:"sms_api_key"`
-	SMSFrom       string `json:"sms_from"`
-	SMSTo         string `json:"sms_to"`
+	PortRange     string `json:"port_range"`
+	Interval      int    `json:"interval_seconds"`
+	AlertOutput   string `json:"alert_output"`
+	HistoryFile   string `json:"history_file"`
+	WebhookURL    string `json:"webhook_url,omitempty"`
+	SlackURL      string `json:"slack_url,omitempty"`
+	DiscordURL    string `json:"discord_url,omitempty"`
+	TeamsURL      string `json:"teams_url,omitempty"`
+	PagerDutyKey  string `json:"pagerduty_key,omitempty"`
+	OpsGenieKey   string `json:"opsgenie_key,omitempty"`
+	GoogleChatURL string `json:"googlechat_url,omitempty"`
 }
 
 // Default returns a Config populated with sensible defaults.
 func Default() *Config {
 	return &Config{
-		ScanRange:    "1-1024",
-		IntervalSecs: 60,
-		AlertOutput:  "",
-		HistoryFile:  "portwatch_history.json",
+		PortRange:   "1-1024",
+		Interval:    60,
+		AlertOutput: "",
+		HistoryFile: "portwatch_history.json",
 	}
 }
 
@@ -57,7 +44,7 @@ func Load(path string) (*Config, error) {
 	return cfg, nil
 }
 
-// Save writes cfg to a JSON file at path.
+// Save writes a Config to a JSON file.
 func Save(cfg *Config, path string) error {
 	f, err := os.Create(path)
 	if err != nil {

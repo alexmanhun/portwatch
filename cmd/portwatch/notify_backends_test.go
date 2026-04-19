@@ -1,8 +1,9 @@
 package main
 
 import (
-	"portwatch/internal/config"
 	"testing"
+
+	"github.com/user/portwatch/internal/config"
 )
 
 func backendNames(d interface{ Backends() []string }) []string {
@@ -17,7 +18,7 @@ func TestBuildDispatcherAlwaysHasLogBackend(t *testing.T) {
 			return
 		}
 	}
-	t.Fatal("log backend missing")
+	t.Fatal("expected log backend to always be present")
 }
 
 func TestBuildDispatcherWebhook(t *testing.T) {
@@ -29,41 +30,41 @@ func TestBuildDispatcherWebhook(t *testing.T) {
 			return
 		}
 	}
-	t.Fatal("webhook backend missing")
+	t.Fatal("expected webhook backend")
 }
 
 func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
-	cfg.PagerDutyKey = "key123"
+	cfg.PagerDutyKey = "test-key"
 	d := buildDispatcher(cfg)
 	for _, name := range d.Backends() {
 		if name == "pagerduty" {
 			return
 		}
 	}
-	t.Fatal("pagerduty backend missing")
+	t.Fatal("expected pagerduty backend")
 }
 
 func TestBuildDispatcherOpsGenie(t *testing.T) {
 	cfg := config.Default()
-	cfg.OpsGenieKey = "ogkey"
+	cfg.OpsGenieKey = "og-key"
 	d := buildDispatcher(cfg)
 	for _, name := range d.Backends() {
 		if name == "opsgenie" {
 			return
 		}
 	}
-	t.Fatal("opsgenie backend missing")
+	t.Fatal("expected opsgenie backend")
 }
 
-func TestBuildDispatcherMQTT(t *testing.T) {
+func TestBuildDispatcherGoogleChat(t *testing.T) {
 	cfg := config.Default()
-	cfg.MQTTBrokerURL = "http://localhost:8080/publish"
+	cfg.GoogleChatURL = "http://chat.googleapis.com/webhook"
 	d := buildDispatcher(cfg)
 	for _, name := range d.Backends() {
-		if name == "mqtt" {
+		if name == "googlechat" {
 			return
 		}
 	}
-	t.Fatal("mqtt backend missing")
+	t.Fatal("expected googlechat backend")
 }

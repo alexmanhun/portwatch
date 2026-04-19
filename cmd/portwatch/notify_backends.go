@@ -13,24 +13,23 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	if cfg.WebhookURL != "" {
 		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
+	if cfg.SlackURL != "" {
+		d.Add(notify.NewSlackBackend(cfg.SlackURL))
+	}
+	if cfg.DiscordURL != "" {
+		d.Add(notify.NewDiscordBackend(cfg.DiscordURL))
+	}
+	if cfg.TeamsURL != "" {
+		d.Add(notify.NewTeamsBackend(cfg.TeamsURL))
+	}
 	if cfg.PagerDutyKey != "" {
 		d.Add(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
 	if cfg.OpsGenieKey != "" {
 		d.Add(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
 	}
-	if cfg.SlackWebhook != "" {
-		d.Add(notify.NewSlackBackend(cfg.SlackWebhook))
-	}
-	if cfg.AMQPBaseURL != "" {
-		d.Add(notify.NewAMQPBackend(
-			cfg.AMQPBaseURL,
-			cfg.AMQPVhost,
-			cfg.AMQPExchange,
-			cfg.AMQPRoutingKey,
-			cfg.AMQPUsername,
-			cfg.AMQPPassword,
-		))
+	if cfg.GoogleChatURL != "" {
+		d.Add(notify.NewGoogleChatBackend(cfg.GoogleChatURL))
 	}
 	return d
 }
