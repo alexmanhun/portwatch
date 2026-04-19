@@ -1,14 +1,18 @@
 package main
 
 import (
-	"github.com/user/portwatch/internal/notify"
-	"github.com/user/portwatch/internal/config"
+	"log/syslog"
+	"os"
+
+	"portwatch/internal/config"
+	"portwatch/internal/notify"
 )
 
-// buildDispatcher constructs a Dispatcher wired with all configured backends.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-	d.Add(notify.NewLogBackend())
+
+	// Always include the log backend.
+	d.Add(notify.NewLogBackend(os.Stderr))
 
 	if cfg.WebhookURL != "" {
 		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
@@ -19,26 +23,14 @@ func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	if cfg.OpsGenieKey != "" {
 		d.Add(notify.NewOpsGenieBackend(cfg.OpsGenieKey))
 	}
-	if cfg.SlackURL != "" {
-		d.Add(notify.NewSlackBackend(cfg.SlackURL))
+	if cfg.SlackWebhook != "" {
+		d.Add(notify.NewSlackBackend(cfg.SlackWebhook))
 	}
-	if cfg.DiscordURL != "" {
-		d.Add(notify.NewDiscordBackend(cfg.DiscordURL))
-	}
-	if cfg.TeamsURL != "" {
-		d.Add(notify.NewTeamsBackend(cfg.TeamsURL))
-	}
-	if cfg.VictorOpsURL != "" {
-		d.Add(notify.NewVictorOpsBackend(cfg.VictorOpsURL))
-	}
-	if cfg.GotifyURL != "" && cfg.GotifyToken != "" {
-		d.Add(notify.NewGotifyBackend(cfg.GotifyURL, cfg.GotifyToken))
-	}
-	if cfg.NtfyURL != "" {
-		d.Add(notify.NewNtfyBackend(cfg.NtfyURL))
-	}
-	if cfg.XMPPGatewayURL != "" && cfg.XMPPTo != "" {
-		d.Add(notify.NewXMPPBackend(cfg.XMPPGatewayURL, cfg.XMPPTo))
+	if cfg.SyslogTag != "" {
+		pri := syslog.LOG_INFO | syslog.LOG_DAEMON
+		if b, err := notify.NewSyslogBackend(cfg.SyslogTag, pri); err == nil {
+			d.Add(b)
+		}
 	}
 
 	return d
