@@ -1,28 +1,35 @@
 package main
 
 import (
-	"portwatch/internal/config"
-	"portwatch/internal/notify"
+	"github.com/user/portwatch/internal/config"
+	"github.com/user/portwatch/internal/notify"
 )
 
+// buildDispatcher constructs a Dispatcher wired up with all configured
+// notification backends. The log backend is always included.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-	d.Add(notify.NewLogBackend())
+	d.Register(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
-		d.Add(notify.NewWebhookBackend(cfg.WebhookURL))
+		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
 	if cfg.PagerDutyKey != "" {
-		d.Add(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
+		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
-	if cfg.SlackWebhookURL != "" {
-		d.Add(notify.NewSlackBackend(cfg.SlackWebhookURL))
+	if cfg.SlackWebhook != "" {
+		d.Register(notify.NewSlackBackend(cfg.SlackWebhook))
 	}
-	if cfg.DatadogAPIKey != "" {
-		d.Add(notify.NewDatadogBackend(cfg.DatadogAPIKey))
+	if cfg.EmailAddr != "" {
+		d.Register(notify.NewEmailBackend(cfg.EmailSMTP, cfg.EmailAddr))
 	}
-	if cfg.NewRelicAccountID != "" && cfg.NewRelicInsertKey != "" {
-		d.Add(notify.NewNewRelicBackend(cfg.NewRelicAccountID, cfg.NewRelicInsertKey))
+	if cfg.TwilioAccountSID != "" && cfg.TwilioAuthToken != "" {
+		d.Register(notify.NewTwilioBackend(
+			cfg.TwilioAccountSID,
+			cfg.TwilioAuthToken,
+			cfg.TwilioFrom,
+			cfg.TwilioTo,
+		))
 	}
 
 	return d

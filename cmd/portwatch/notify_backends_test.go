@@ -1,17 +1,23 @@
 package main
 
 import (
-	"portwatch/internal/config"
 	"testing"
+
+	"github.com/user/portwatch/internal/config"
+	"github.com/user/portwatch/internal/notify"
 )
 
-func backendNames(d interface{ Names() []string }) []string {
-	return d.Names()
+func backendNames(d *notify.Dispatcher) []string {
+	names := make([]string, 0)
+	for _, b := range d.Backends() {
+		names = append(names, b.Name())
+	}
+	return names
 }
 
-func hasBackend(names []string, target string) bool {
-	for _, n := range names {
-		if n == target {
+func hasBackend(d *notify.Dispatcher, name string) bool {
+	for _, n := range backendNames(d) {
+		if n == name {
 			return true
 		}
 	}
@@ -21,17 +27,17 @@ func hasBackend(names []string, target string) bool {
 func TestBuildDispatcherAlwaysHasLogBackend(t *testing.T) {
 	cfg := config.Default()
 	d := buildDispatcher(cfg)
-	if !hasBackend(d.Names(), "log") {
+	if !hasBackend(d, "log") {
 		t.Error("expected log backend to always be present")
 	}
 }
 
 func TestBuildDispatcherWebhook(t *testing.T) {
 	cfg := config.Default()
-	cfg.WebhookURL = "http://example.com/hook"
+	cfg.WebhookURL = "https://example.com/hook"
 	d := buildDispatcher(cfg)
-	if !hasBackend(d.Names(), "webhook") {
-		t.Error("expected webhook backend")
+	if !hasBackend(d, "webhook") {
+		t.Error("expected webhook backend when WebhookURL is set")
 	}
 }
 
@@ -39,25 +45,29 @@ func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
 	cfg.PagerDutyKey = "somekey"
 	d := buildDispatcher(cfg)
-	if !hasBackend(d.Names(), "pagerduty") {
-		t.Error("expected pagerduty backend")
+	if !hasBackend(d, "pagerduty") {
+		t.Error("expected pagerduty backend when PagerDutyKey is set")
 	}
 }
 
-func TestBuildDispatcherOpsGenie(t *testing.T) {
+func TestBuildDispatcherTwilio(t *testing.T) {
 	cfg := config.Default()
-	cfg.OpsGenieKey = "ogkey"
+	cfg.TwilioAccountSID = "ACtest"
+	cfg.TwilioAuthToken = "token"
+	cfg.TwilioFrom = "+10000000000"
+	cfg.TwilioTo = "+19999999999"
 	d := buildDispatcher(cfg)
-	if !hasBackend(d.Names(), "opsgenie") {
-		t.Error("expected opsgenie backend")
+	if !hasBackend(d, "twilio") {
+		t.Error("expected twilio backend when Twilio credentials are set")
 	}
 }
 
-func TestBuildDispatcherDingTalk(t *testing.T) {
+func TestBuildDispatcherTwilioMissingToken(t *testing.T) {
 	cfg := config.Default()
-	cfg.DingTalkWebhook = "http://oapi.dingtalk.com/robot/send?access_token=abc"
+	cfg.TwilioAccountSID = "ACtest"
+	// AuthToken intentionally omitted
 	d := buildDispatcher(cfg)
-	if !hasBackend(d.Names(), "dingtalk") {
-		t.Error("expected dingtalk backend")
+	if hasBackend(d, "twilio") {
+		t.Error("twilio backend should not be registered without auth token")
 	}
 }
