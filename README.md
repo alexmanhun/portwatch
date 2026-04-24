@@ -68,6 +68,16 @@ baseline: baseline.json
 log_level: info
 ```
 
+### CLI Flags
+
+| Flag | Default | Description |
+|------|---------|-------------|
+| `--interval` | `60s` | How often to poll for port changes |
+| `--notify` | `false` | Enable desktop/system notifications on changes |
+| `--baseline` | _(none)_ | Path to a baseline snapshot file |
+| `--log-level` | `info` | Log verbosity (`debug`, `info`, `warn`, `error`) |
+| `--output` | `stdout` | Log output destination (file path or `stdout`) |
+
 ---
 
 ## License
