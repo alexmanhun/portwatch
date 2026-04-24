@@ -12,6 +12,8 @@ type FilterOptions struct {
 }
 
 // Filter returns records matching all non-zero criteria in opts.
+// Records are filtered by port, event type, and time range before
+// the limit is applied, keeping the most recent matching records.
 func Filter(records []Record, opts FilterOptions) []Record {
 	var out []Record
 	for _, r := range records {
@@ -33,4 +35,9 @@ func Filter(records []Record, opts FilterOptions) []Record {
 		out = out[len(out)-opts.Limit:]
 	}
 	return out
+}
+
+// FilterByPort is a convenience wrapper that returns all records for the given port.
+func FilterByPort(records []Record, port int) []Record {
+	return Filter(records, FilterOptions{Port: port})
 }
