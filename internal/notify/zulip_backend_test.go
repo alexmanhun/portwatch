@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"strings"
 	"testing"
 )
 
@@ -46,6 +47,31 @@ func TestZulipBackendSendsForm(t *testing.T) {
 	msg := captured.Get("content")
 	if msg == "" {
 		t.Error("expected non-empty content")
+	}
+}
+
+func TestZulipBackendSendsFormContainsPort(t *testing.T) {
+	var captured url.Values
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if err := r.ParseForm(); err != nil {
+			t.Fatalf("parse form: %v", err)
+		}
+		captured = r.Form
+		w.Header().Set("Content-Type", "application/json")
+		_ = json.NewEncoder(w).Encode(map[string]interface{}{"result": "success", "id": 1})
+	}))
+	defer ts.Close()
+
+	b := NewZulipBackend(ts.URL, "bot@example.com", "secret", "ops", "alerts")
+	event := Event{Type: "new_port", Port: 9090, Detail: "tcp"}
+
+	if err := b.Send(event); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	msg := captured.Get("content")
+	if !strings.Contains(msg, "9090") {
+		t.Errorf("expected content to contain port 9090, got %q", msg)
 	}
 }
 
