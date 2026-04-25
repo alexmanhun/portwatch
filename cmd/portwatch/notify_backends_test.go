@@ -4,19 +4,14 @@ import (
 	"testing"
 
 	"github.com/user/portwatch/internal/config"
-	"github.com/user/portwatch/internal/notify"
 )
 
-func backendNames(d *notify.Dispatcher) []string {
-	names := make([]string, 0)
-	for _, b := range d.Backends() {
-		names = append(names, b.Name())
-	}
-	return names
+func backendNames(d interface{ Names() []string }) []string {
+	return d.Names()
 }
 
-func hasBackend(d *notify.Dispatcher, name string) bool {
-	for _, n := range backendNames(d) {
+func hasBackend(names []string, name string) bool {
+	for _, n := range names {
 		if n == name {
 			return true
 		}
@@ -27,47 +22,45 @@ func hasBackend(d *notify.Dispatcher, name string) bool {
 func TestBuildDispatcherAlwaysHasLogBackend(t *testing.T) {
 	cfg := config.Default()
 	d := buildDispatcher(cfg)
-	if !hasBackend(d, "log") {
-		t.Error("expected log backend to always be present")
+	if !hasBackend(d.Names(), "log") {
+		t.Error("expected log backend to always be registered")
 	}
 }
 
 func TestBuildDispatcherWebhook(t *testing.T) {
 	cfg := config.Default()
-	cfg.WebhookURL = "https://example.com/hook"
+	cfg.WebhookURL = "http://example.com/hook"
 	d := buildDispatcher(cfg)
-	if !hasBackend(d, "webhook") {
+	if !hasBackend(d.Names(), "webhook") {
 		t.Error("expected webhook backend when WebhookURL is set")
 	}
 }
 
 func TestBuildDispatcherPagerDuty(t *testing.T) {
 	cfg := config.Default()
-	cfg.PagerDutyKey = "somekey"
+	cfg.PagerDutyKey = "pd-key-123"
 	d := buildDispatcher(cfg)
-	if !hasBackend(d, "pagerduty") {
+	if !hasBackend(d.Names(), "pagerduty") {
 		t.Error("expected pagerduty backend when PagerDutyKey is set")
 	}
 }
 
-func TestBuildDispatcherTwilio(t *testing.T) {
+func TestBuildDispatcherWebex(t *testing.T) {
 	cfg := config.Default()
-	cfg.TwilioAccountSID = "ACtest"
-	cfg.TwilioAuthToken = "token"
-	cfg.TwilioFrom = "+10000000000"
-	cfg.TwilioTo = "+19999999999"
+	cfg.WebexToken = "wx-token"
+	cfg.WebexRoomID = "room-id"
 	d := buildDispatcher(cfg)
-	if !hasBackend(d, "twilio") {
-		t.Error("expected twilio backend when Twilio credentials are set")
+	if !hasBackend(d.Names(), "webex") {
+		t.Error("expected webex backend when WebexToken and WebexRoomID are set")
 	}
 }
 
-func TestBuildDispatcherTwilioMissingToken(t *testing.T) {
+func TestBuildDispatcherWebexSkippedWhenPartial(t *testing.T) {
 	cfg := config.Default()
-	cfg.TwilioAccountSID = "ACtest"
-	// AuthToken intentionally omitted
+	cfg.WebexToken = "wx-token"
+	// WebexRoomID intentionally left empty
 	d := buildDispatcher(cfg)
-	if hasBackend(d, "twilio") {
-		t.Error("twilio backend should not be registered without auth token")
+	if hasBackend(d.Names(), "webex") {
+		t.Error("expected webex backend to be skipped when RoomID is missing")
 	}
 }
