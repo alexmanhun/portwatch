@@ -5,31 +5,30 @@ import (
 	"github.com/user/portwatch/internal/notify"
 )
 
-// buildDispatcher constructs a Dispatcher wired with all backends that are
-// enabled in cfg. The log backend is always included.
+// buildDispatcher constructs a Dispatcher wired with every backend that has
+// been configured. The log backend is always present as a fallback.
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
-
-	d.Register(notify.NewLogBackend())
+	d.Register(notify.NewLogBackend(nil))
 
 	if cfg.WebhookURL != "" {
 		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
-
 	if cfg.PagerDutyKey != "" {
 		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
-
-	if cfg.SlackWebhookURL != "" {
-		d.Register(notify.NewSlackBackend(cfg.SlackWebhookURL))
+	if cfg.SlackWebhook != "" {
+		d.Register(notify.NewSlackBackend(cfg.SlackWebhook))
 	}
-
 	if cfg.EmailAddr != "" {
 		d.Register(notify.NewEmailBackend(cfg.EmailAddr, cfg.SMTPHost))
 	}
-
-	if cfg.FlowdockToken != "" {
-		d.Register(notify.NewFlowdockBackend(cfg.FlowdockToken))
+	if cfg.CustomEventURL != "" {
+		headers := map[string]string{}
+		if cfg.CustomEventToken != "" {
+			headers["Authorization"] = "Bearer " + cfg.CustomEventToken
+		}
+		d.Register(notify.NewCustomEventBackend(cfg.CustomEventURL, headers))
 	}
 
 	return d
