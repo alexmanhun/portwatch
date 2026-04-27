@@ -48,6 +48,27 @@ func TestLarkBackendSendsJSON(t *testing.T) {
 	}
 }
 
+func TestLarkBackendSendsCorrectContentType(t *testing.T) {
+	var contentType string
+
+	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		contentType = r.Header.Get("Content-Type")
+		w.WriteHeader(http.StatusOK)
+	}))
+	defer ts.Close()
+
+	b := NewLarkBackend(ts.URL)
+	event := alert.Event{Type: alert.EventNewPort, Port: 8080, Message: "test"}
+
+	if err := b.Send(event); err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if contentType != "application/json" {
+		t.Errorf("expected Content-Type 'application/json', got %q", contentType)
+	}
+}
+
 func TestLarkBackendNon2xx(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
