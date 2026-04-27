@@ -5,63 +5,42 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
-	"time"
+
+	"github.com/user/portwatch/internal/alert"
 )
 
-// AWSSNSBackend publishes port-change events to an AWS SNS topic via the
-// SNS HTTP publish endpoint. It is intended for use with SNS HTTP/HTTPS
-// subscriptions or a local SNS-compatible mock (e.g. LocalStack).
-type AWSSNSBackend struct {
-	topicARN string
-	endpointURL string // e.g. https://sns.us-east-1.amazonaws.com or LocalStack URL
+type awsSNSBackend struct {
+	topicARN  string
+	region    string
 	accessKey string
 	secretKey string
-	region string
-	client *http.Client
+	endpoint  string
+	client    *http.Client
 }
 
-// NewAWSSNSBackend creates a new AWSSNSBackend.
-// endpointURL is the base SNS endpoint (leave empty to use the default AWS
-// regional endpoint derived from region).
-func NewAWSSNSBackend(topicARN, region, accessKey, secretKey, endpointURL string) *AWSSNSBackend {
-	ep := endpointURL
-	if ep == "" {
-		ep = fmt.Sprintf("https://sns.%s.amazonaws.com", region)
-	}
-	return &AWSSNSBackend{
-		topicARN:    topicARN,
-		endpointURL: ep,
-		accessKey:   accessKey,
-		secretKey:   secretKey,
-		region:      region,
-		client:      &http.Client{Timeout: 10 * time.Second},
+// NewAWSSNSBackend creates a Backend that publishes alerts to an AWS SNS topic.
+// For production use, credentials should be provided via environment variables
+// or IAM roles; the accessKey/secretKey parameters are used for explicit auth.
+func NewAWSSNSBackend(topicARN, region, accessKey, secretKey string) Backend {
+	return &awsSNSBackend{
+		topicARN:  topicARN,
+		region:    region,
+		accessKey: accessKey,
+		secretKey: secretKey,
+		endpoint:  fmt.Sprintf("https://sns.%s.amazonaws.com", region),
+		client:    &http.Client{},
 	}
 }
 
-// Name returns the backend identifier.
-func (b *AWSSNSBackend) Name() string { return "awssns" }
+func (b *awsSNSBackend) Name() string { return "awssns" }
 
-// snsPublishPayload is the JSON body sent to the SNS publish endpoint.
-// This mirrors the structure expected by LocalStack and SNS-compatible APIs
-// that accept JSON rather than query-string form encoding.
-type snsPublishPayload struct {
-	TopicArn string `json:"TopicArn"`
-	Message  string `json:"Message"`
-	Subject  string `json:"Subject"`
-}
+func (b *awsSNSBackend) Send(ev alert.Event) error {
+	message := fmt.Sprintf("portwatch alert: %s on port %d", ev.Type, ev.Port)
 
-// Send dispatches the event to the configured SNS topic.
-func (b *AWSSNSBackend) Send(event Event) error {
-	subject := fmt.Sprintf("portwatch: %s on port %d", event.Type, event.Port)
-	message := fmt.Sprintf(
-		"{\"event\":%q,\"port\":%d,\"timestamp\":%q}",
-		event.Type, event.Port, event.Timestamp.UTC().Format(time.RFC3339),
-	)
-
-	payload := snsPublishPayload{
-		TopicArn: b.topicARN,
-		Message:  message,
-		Subject:  subject,
+	payload := map[string]string{
+		"TopicArn": b.topicARN,
+		"Message":  message,
+		"Subject":  fmt.Sprintf("portwatch [%s] port %d", ev.Type, ev.Port),
 	}
 
 	body, err := json.Marshal(payload)
@@ -69,18 +48,13 @@ func (b *AWSSNSBackend) Send(event Event) error {
 		return fmt.Errorf("awssns: marshal payload: %w", err)
 	}
 
-	// Build the publish URL. Real AWS uses query-params + SigV4; for
-	// simplicity (and LocalStack compatibility) we POST JSON to the endpoint.
-	url := b.endpointURL + "/?Action=Publish"
-
-	req, err := http.NewRequest(http.MethodPost, url, bytes.NewReader(body))
+	req, err := http.NewRequest(http.MethodPost, b.endpoint, bytes.NewReader(body))
 	if err != nil {
 		return fmt.Errorf("awssns: create request: %w", err)
 	}
 	req.Header.Set("Content-Type", "application/json")
 	if b.accessKey != "" {
-		// Minimal auth header — production deployments should use proper SigV4.
-		req.Header.Set("X-Amz-Access-Key", b.accessKey)
+		req.SetBasicAuth(b.accessKey, b.secretKey)
 	}
 
 	resp, err := b.client.Do(req)
