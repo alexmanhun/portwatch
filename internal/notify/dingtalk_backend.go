@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/user/portwatch/internal/alert"
 )
 
-// DingTalkBackend sends alerts to a DingTalk webhook.
+// DingTalkBackend sends notifications via DingTalk webhook.
 type DingTalkBackend struct {
 	webhookURL string
 	client     *http.Client
@@ -21,20 +23,20 @@ func NewDingTalkBackend(webhookURL string) *DingTalkBackend {
 	}
 }
 
-func (d *DingTalkBackend) Name() string { return "dingtalk" }
+func (b *DingTalkBackend) Name() string { return "dingtalk" }
 
-func (d *DingTalkBackend) Send(event Event) error {
+func (b *DingTalkBackend) Send(event alert.Event) error {
 	payload := map[string]interface{}{
 		"msgtype": "text",
 		"text": map[string]string{
-			"content": fmt.Sprintf("[portwatch] %s port %d", event.Type, event.Port),
+			"content": fmt.Sprintf("[portwatch] %s: port %d", event.Type, event.Port),
 		},
 	}
-	body, err := json.Marshal(payload)
+	data, err := json.Marshal(payload)
 	if err != nil {
 		return err
 	}
-	resp, err := d.client.Post(d.webhookURL, "application/json", bytes.NewReader(body))
+	resp, err := b.client.Post(b.webhookURL, "application/json", bytes.NewReader(data))
 	if err != nil {
 		return err
 	}

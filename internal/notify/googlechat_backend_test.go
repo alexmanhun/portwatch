@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
+
+	"github.com/user/portwatch/internal/alert"
 )
 
 func TestGoogleChatBackendName(t *testing.T) {
-	b := NewGoogleChatBackend("http://example.com")
+	b := NewGoogleChatBackend("http://example.com/webhook")
 	if b.Name() != "googlechat" {
-		t.Fatalf("expected googlechat, got %s", b.Name())
+		t.Errorf("expected 'googlechat', got %q", b.Name())
 	}
 }
 
@@ -20,37 +22,37 @@ func TestGoogleChatBackendSendsJSON(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		body, _ := io.ReadAll(r.Body)
 		json.Unmarshal(body, &received)
-		w.WriteHeader(200)
+		w.WriteHeader(http.StatusOK)
 	}))
 	defer ts.Close()
 
 	b := NewGoogleChatBackend(ts.URL)
-	err := b.Send(Event{Type: "new", Port: 8080, Message: "opened"})
-	if err != nil {
+	event := alert.Event{Type: alert.NewPortEvent, Port: 8080}
+	if err := b.Send(event); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if received["text"] == "" {
-		t.Fatal("expected text field in payload")
+		t.Error("expected non-empty text field")
 	}
 }
 
 func TestGoogleChatBackendNon2xx(t *testing.T) {
 	ts := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(500)
+		w.WriteHeader(http.StatusInternalServerError)
 	}))
 	defer ts.Close()
 
 	b := NewGoogleChatBackend(ts.URL)
-	err := b.Send(Event{Type: "new", Port: 9090, Message: "opened"})
-	if err == nil {
-		t.Fatal("expected error on non-2xx response")
+	event := alert.Event{Type: alert.NewPortEvent, Port: 443}
+	if err := b.Send(event); err == nil {
+		t.Error("expected error on non-2xx response")
 	}
 }
 
 func TestGoogleChatBackendBadURL(t *testing.T) {
-	b := NewGoogleChatBackend("http://127.0.0.1:0")
-	err := b.Send(Event{Type: "closed", Port: 22, Message: "closed"})
-	if err == nil {
-		t.Fatal("expected error on bad URL")
+	b := NewGoogleChatBackend("http://127.0.0.1:0/invalid")
+	event := alert.Event{Type: alert.ClosedPortEvent, Port: 22}
+	if err := b.Send(event); err == nil {
+		t.Error("expected error for bad URL")
 	}
 }
