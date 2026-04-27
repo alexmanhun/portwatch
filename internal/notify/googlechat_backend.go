@@ -23,19 +23,19 @@ func NewGoogleChatBackend(webhookURL string) *GoogleChatBackend {
 	}
 }
 
-func (b *GoogleChatBackend) Name() string { return "googlechat" }
+func (g *GoogleChatBackend) Name() string { return "googlechat" }
 
-func (b *GoogleChatBackend) Send(event alert.Event) error {
+func (g *GoogleChatBackend) Send(event alert.Event) error {
 	payload := map[string]string{
 		"text": fmt.Sprintf("[portwatch] %s: port %d", event.Type, event.Port),
 	}
-	data, err := json.Marshal(payload)
+	body, err := json.Marshal(payload)
 	if err != nil {
-		return err
+		return fmt.Errorf("googlechat: marshal: %w", err)
 	}
-	resp, err := b.client.Post(b.webhookURL, "application/json", bytes.NewReader(data))
+	resp, err := g.client.Post(g.webhookURL, "application/json", bytes.NewReader(body))
 	if err != nil {
-		return err
+		return fmt.Errorf("googlechat: post: %w", err)
 	}
 	defer resp.Body.Close()
 	if resp.StatusCode < 200 || resp.StatusCode >= 300 {
