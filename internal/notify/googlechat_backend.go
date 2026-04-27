@@ -5,9 +5,11 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+
+	"github.com/user/portwatch/internal/alert"
 )
 
-// GoogleChatBackend sends alerts to a Google Chat webhook.
+// GoogleChatBackend sends notifications to a Google Chat webhook.
 type GoogleChatBackend struct {
 	webhookURL string
 	client     *http.Client
@@ -23,9 +25,9 @@ func NewGoogleChatBackend(webhookURL string) *GoogleChatBackend {
 
 func (g *GoogleChatBackend) Name() string { return "googlechat" }
 
-func (g *GoogleChatBackend) Send(event Event) error {
+func (g *GoogleChatBackend) Send(event alert.Event) error {
 	payload := map[string]string{
-		"text": fmt.Sprintf("*portwatch* [%s] port %d: %s", event.Type, event.Port, event.Message),
+		"text": fmt.Sprintf("[portwatch] %s: port %d", event.Type, event.Port),
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
