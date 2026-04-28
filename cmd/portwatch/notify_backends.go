@@ -9,23 +9,23 @@ import (
 func buildDispatcher(cfg *config.Config) *notify.Dispatcher {
 	d := notify.New()
 
-	// Log backend is always present.
-	d.Register(notify.NewLogBackend(nil))
+	// Log backend is always active.
+	d.Register(notify.NewLogBackend())
 
 	if cfg.WebhookURL != "" {
 		d.Register(notify.NewWebhookBackend(cfg.WebhookURL))
 	}
+	if cfg.SlackWebhookURL != "" {
+		d.Register(notify.NewSlackBackend(cfg.SlackWebhookURL))
+	}
 	if cfg.PagerDutyKey != "" {
 		d.Register(notify.NewPagerDutyBackend(cfg.PagerDutyKey))
 	}
-	if cfg.SlackWebhook != "" {
-		d.Register(notify.NewSlackBackend(cfg.SlackWebhook))
+	if cfg.EmailSMTP != "" {
+		d.Register(notify.NewEmailBackend(cfg.EmailSMTP, cfg.EmailFrom, cfg.EmailTo))
 	}
-	if cfg.EmailAddr != "" {
-		d.Register(notify.NewEmailBackend(cfg.EmailAddr, cfg.SMTPHost))
-	}
-	if cfg.WebexToken != "" && cfg.WebexRoomID != "" {
-		d.Register(notify.NewWebexBackend(cfg.WebexToken, cfg.WebexRoomID))
+	if cfg.JiraBaseURL != "" {
+		d.Register(notify.NewJiraBackend(cfg.JiraBaseURL, cfg.JiraProject, cfg.JiraUsername, cfg.JiraAPIToken))
 	}
 
 	return d
