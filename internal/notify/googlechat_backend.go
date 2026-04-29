@@ -27,7 +27,7 @@ func (g *GoogleChatBackend) Name() string { return "googlechat" }
 
 func (g *GoogleChatBackend) Send(event alert.Event) error {
 	payload := map[string]string{
-		"text": fmt.Sprintf("[portwatch] %s: port %d", event.Type, event.Port),
+		"text": fmt.Sprintf("*portwatch* [%s] port %d — %s", event.Type, event.Port, event.Message),
 	}
 	body, err := json.Marshal(payload)
 	if err != nil {
