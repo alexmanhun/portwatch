@@ -11,9 +11,9 @@ import (
 )
 
 func TestGoogleChatBackendName(t *testing.T) {
-	b := NewGoogleChatBackend("http://example.com/webhook")
+	b := NewGoogleChatBackend("http://example.com")
 	if b.Name() != "googlechat" {
-		t.Errorf("expected 'googlechat', got %q", b.Name())
+		t.Fatalf("expected googlechat, got %s", b.Name())
 	}
 }
 
@@ -27,8 +27,8 @@ func TestGoogleChatBackendSendsJSON(t *testing.T) {
 	defer ts.Close()
 
 	b := NewGoogleChatBackend(ts.URL)
-	event := alert.Event{Type: alert.NewPortEvent, Port: 8080}
-	if err := b.Send(event); err != nil {
+	ev := alert.Event{Type: alert.NewPort, Port: 8080}
+	if err := b.Send(ev); err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 	if received["text"] == "" {
@@ -43,16 +43,16 @@ func TestGoogleChatBackendNon2xx(t *testing.T) {
 	defer ts.Close()
 
 	b := NewGoogleChatBackend(ts.URL)
-	event := alert.Event{Type: alert.NewPortEvent, Port: 443}
-	if err := b.Send(event); err == nil {
-		t.Error("expected error on non-2xx response")
+	ev := alert.Event{Type: alert.NewPort, Port: 9090}
+	if err := b.Send(ev); err == nil {
+		t.Fatal("expected error for non-2xx status")
 	}
 }
 
 func TestGoogleChatBackendBadURL(t *testing.T) {
-	b := NewGoogleChatBackend("http://127.0.0.1:0/invalid")
-	event := alert.Event{Type: alert.ClosedPortEvent, Port: 22}
-	if err := b.Send(event); err == nil {
-		t.Error("expected error for bad URL")
+	b := NewGoogleChatBackend("://bad-url")
+	ev := alert.Event{Type: alert.NewPort, Port: 1234}
+	if err := b.Send(ev); err == nil {
+		t.Fatal("expected error for bad URL")
 	}
 }
